@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 
@@ -28,11 +26,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: true})
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
-	fmt.Println("Shutting down...")
-	c.Close()
+	gamelogic.PrintServerHelp()
+game_loop:
+	for {
+		words := gamelogic.GetInput()
+		switch words[0] {
+		case "pause":
+			fmt.Println("Sending pause message")
+			pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: true})
+		case "resume":
+			fmt.Println("Sending resume message")
+			pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, routing.PlayingState{IsPaused: false})
+		case "quit":
+			fmt.Println("Shutting down...")
+			break game_loop
+		default:
+			fmt.Println("Command not understood")
+		}
+	}
 }
