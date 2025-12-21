@@ -46,12 +46,24 @@ game_loop:
 				fmt.Println(err)
 			}
 		case "move":
-			_, err := gamestate.CommandMove(words)
+			move, err := gamestate.CommandMove(words)
 			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Moving worked")
 			}
+			ch, err := conn.Channel()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			err = pubsub.PublishJSON(ch, routing.ExchangePerilTopic, moveQueue, move)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Publishing move worked")
+			}
+			ch.Close()
 		case "status":
 			gamestate.CommandStatus()
 		case "help":
