@@ -32,6 +32,10 @@ func main() {
 	pubsub.DeclareAndBind(conn, routing.ExchangePerilDirect, pauseQueue, routing.PauseKey, pubsub.Transient)
 	pubsub.SubscribeJSON(conn, routing.ExchangePerilDirect, pauseQueue, routing.PauseKey, pubsub.Transient, handlerPause(gamestate))
 
+	moveQueue := fmt.Sprintf("%s.%s", routing.ArmyMovesPrefix, username)
+	moveKey := fmt.Sprintf("%s.%s", routing.ArmyMovesPrefix, "*")
+	pubsub.SubscribeJSON(conn, routing.ExchangePerilTopic, moveQueue, moveKey, pubsub.Transient, handlerMove(gamestate))
+
 game_loop:
 	for {
 		words := gamelogic.GetInput()
@@ -68,5 +72,12 @@ func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
 	return func(ps routing.PlayingState) {
 		defer fmt.Print("> ")
 		gs.HandlePause(ps)
+	}
+}
+
+func handlerMove(gs *gamelogic.GameState) func(gamelogic.ArmyMove) {
+	return func(move gamelogic.ArmyMove) {
+		defer fmt.Print("> ")
+		gs.HandleMove(move)
 	}
 }
