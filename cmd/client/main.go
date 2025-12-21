@@ -25,9 +25,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pubsub.DeclareAndBind(conn, routing.ExchangePerilDirect, fmt.Sprintf("%s.%s", routing.PauseKey, username), routing.PauseKey, pubsub.Transient)
 
 	gamestate := gamelogic.NewGameState(username)
+
+	pauseQueue := fmt.Sprintf("%s.%s", routing.PauseKey, username)
+	pubsub.DeclareAndBind(conn, routing.ExchangePerilDirect, pauseQueue, routing.PauseKey, pubsub.Transient)
+	pubsub.SubscribeJSON(conn, routing.ExchangePerilDirect, pauseQueue, routing.PauseKey, pubsub.Transient, handlerPause(gamestate))
+
 game_loop:
 	for {
 		words := gamelogic.GetInput()
@@ -58,4 +62,11 @@ game_loop:
 		}
 	}
 	fmt.Println("Shutting down...")
+}
+
+func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
+	return func(ps routing.PlayingState) {
+		defer fmt.Print("> ")
+		gs.HandlePause(ps)
+	}
 }
