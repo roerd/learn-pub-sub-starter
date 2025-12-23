@@ -115,7 +115,7 @@ func handlerMove(gs *gamelogic.GameState, conn *amqp.Connection) func(gamelogic.
 				log.Printf("Error publishing war message: %v", err)
 				return pubsub.NackRequeue
 			}
-			return pubsub.NackRequeue
+			return pubsub.Ack
 		case gamelogic.MoveOutcomeSamePlayer:
 			return pubsub.NackDiscard
 		default:
