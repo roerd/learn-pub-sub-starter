@@ -15,14 +15,26 @@ func main() {
 	fmt.Println("Starting Peril server...")
 
 	const url = "amqp://guest:guest@localhost:5672/"
-	c, err := amqp.Dial(url)
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer c.Close()
+	defer conn.Close()
 	fmt.Println("Connection was successful")
 
-	ch, err := c.Channel()
+	_, queue, err := pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
+		pubsub.Durable,
+	)
+	if err != nil {
+		log.Fatalf("could not subscribe to pause: %v", err)
+	}
+	fmt.Printf("Queue %v declared and bound!\n", queue.Name)
+
+	ch, err := conn.Channel()
 	if err != nil {
 		log.Fatal(err)
 	}
