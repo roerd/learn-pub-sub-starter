@@ -115,6 +115,24 @@ func SubscribeJSON[T any](
 	return subscribe(conn, exchange, queueName, key, simpleQueueType, handler, unmarshaller)
 }
 
+func SubscribeGob[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	simpleQueueType SimpleQueueType,
+	handler func(T) AckType,
+) error {
+	unmarshaller := func(body []byte) (T, error) {
+		var val T
+		buf := bytes.NewBuffer(body)
+		dec := gob.NewDecoder(buf)
+		err := dec.Decode(&val)
+		return val, err
+	}
+	return subscribe(conn, exchange, queueName, key, simpleQueueType, handler, unmarshaller)
+}
+
 func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
