@@ -22,17 +22,18 @@ func main() {
 	defer conn.Close()
 	fmt.Println("Connection was successful")
 
-	_, queue, err := pubsub.DeclareAndBind(
+	err = pubsub.SubscribeGob(
 		conn,
 		routing.ExchangePerilTopic,
 		routing.GameLogSlug,
 		routing.GameLogSlug+".*",
 		pubsub.Durable,
+		handleGameLog,
 	)
 	if err != nil {
 		log.Fatalf("could not subscribe to %v: %v", routing.GameLogSlug, err)
 	}
-	fmt.Printf("Queue %v declared and bound!\n", queue.Name)
+	fmt.Printf("Subscribed to %v\n", routing.GameLogSlug)
 
 	ch, err := conn.Channel()
 	if err != nil {
@@ -57,4 +58,14 @@ game_loop:
 			fmt.Println("Command not understood")
 		}
 	}
+}
+
+func handleGameLog(gamelog routing.GameLog) pubsub.AckType {
+	defer fmt.Print("> ")
+	err := gamelogic.WriteLog(gamelog)
+	if err != nil {
+		log.Printf("Error writing log: %v", err)
+		return pubsub.NackDiscard
+	}
+	return pubsub.Ack
 }
