@@ -30,7 +30,7 @@ func main() {
 		pubsub.Durable,
 	)
 	if err != nil {
-		log.Fatalf("could not subscribe to pause: %v", err)
+		log.Fatalf("could not subscribe to %v: %v", routing.GameLogSlug, err)
 	}
 	fmt.Printf("Queue %v declared and bound!\n", queue.Name)
 
