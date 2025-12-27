@@ -59,13 +59,14 @@ const (
 	NackDiscard
 )
 
-func SubscribeJSON[T any](
+func subscribe[T any](
 	conn *amqp.Connection,
 	exchange,
 	queueName,
 	key string,
 	simpleQueueType SimpleQueueType,
 	handler func(T) AckType,
+	unmarshaller func([]byte) (T, error),
 ) error {
 	DeclareAndBind(conn, exchange, queueName, key, simpleQueueType)
 	ch, err := conn.Channel()
@@ -78,8 +79,7 @@ func SubscribeJSON[T any](
 	}
 	go func() {
 		for msg := range msgs {
-			var val T
-			err := json.Unmarshal(msg.Body, &val)
+			val, err := unmarshaller(msg.Body)
 			if err != nil {
 				log.Printf("Failed to unmarshal message: %v", err)
 				msg.Ack(false)
@@ -88,18 +88,31 @@ func SubscribeJSON[T any](
 			acktype := handler(val)
 			switch acktype {
 			case Ack:
-				//log.Printf("Acking message")
 				msg.Ack(false)
 			case NackRequeue:
-				//log.Printf("Nacking and requeuing message")
 				msg.Nack(false, true)
 			case NackDiscard:
-				//log.Printf("Nacking and discarding message")
 				msg.Nack(false, false)
 			}
 		}
 	}()
 	return nil
+}
+
+func SubscribeJSON[T any](
+	conn *amqp.Connection,
+	exchange,
+	queueName,
+	key string,
+	simpleQueueType SimpleQueueType,
+	handler func(T) AckType,
+) error {
+	unmarshaller := func(body []byte) (T, error) {
+		var val T
+		err := json.Unmarshal(body, &val)
+		return val, err
+	}
+	return subscribe(conn, exchange, queueName, key, simpleQueueType, handler, unmarshaller)
 }
 
 func PublishGob[T any](ch *amqp.Channel, exchange, key string, val T) error {
