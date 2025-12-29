@@ -73,6 +73,15 @@ func subscribe[T any](
 	if err != nil {
 		return err
 	}
+	err = ch.Qos(
+		1,     // prefetchCount: only 1 unacked message at a time
+		0,     // prefetchSize: not used
+		false, // global
+	)
+	if err != nil {
+		log.Printf("could not set QoS: %v", err)
+		return err
+	}
 	msgs, err := ch.Consume(queueName, "", false, false, false, false, nil)
 	if err != nil {
 		return err
