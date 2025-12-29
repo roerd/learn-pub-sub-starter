@@ -44,6 +44,9 @@ func main() {
 game_loop:
 	for {
 		words := gamelogic.GetInput()
+		if len(words) == 0 {
+			continue
+		}
 		switch words[0] {
 		case "pause":
 			fmt.Println("Sending pause message")
