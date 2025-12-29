@@ -74,7 +74,7 @@ func subscribe[T any](
 		return err
 	}
 	err = ch.Qos(
-		1,     // prefetchCount: only 1 unacked message at a time
+		10,    // prefetchCount: only 1 unacked message at a time
 		0,     // prefetchSize: not used
 		false, // global
 	)
