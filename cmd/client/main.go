@@ -73,7 +73,28 @@ game_loop:
 		case "help":
 			gamelogic.PrintClientHelp()
 		case "spam":
-			fmt.Println("Spamming not allowed yet!")
+			if len(words) < 2 {
+				fmt.Println("You must provide a number of messages to spam")
+				continue
+			}
+			var num int
+			_, err := fmt.Sscanf(words[1], "%d", &num)
+			if err != nil {
+				fmt.Println("You must provide a number of messages to spam")
+				continue
+			}
+			for i := 0; i < num; i++ {
+				log := gamelogic.GetMaliciousLog()
+				game_log := routing.GameLog{
+					CurrentTime: time.Now(),
+					Message:     log,
+					Username:    username,
+				}
+				err := PublishGameLog(game_log, conn)
+				if err != nil {
+					fmt.Printf("Error publishing log: %v\n", err)
+				}
+			}
 		case "quit":
 			gamelogic.PrintQuit()
 			break game_loop
